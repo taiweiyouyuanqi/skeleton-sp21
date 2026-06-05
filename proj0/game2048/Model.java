@@ -2,6 +2,8 @@ package game2048;
 
 import java.util.Formatter;
 import java.util.Observable;
+import java.util.Set;
+import java.util.HashSet;
 
 
 /** The state of a game of 2048.
@@ -16,7 +18,7 @@ public class Model extends Observable {
     private int maxScore;
     /** True iff game is ended. */
     private boolean gameOver;
-
+    private static int length;
     /* Coordinate System: column C, row R of the board (where row 0,
      * column 0 is the lower-left corner of the board) will correspond
      * to board.tile(c, r).  Be careful! It works like (x, y) coordinates.
@@ -112,9 +114,53 @@ public class Model extends Observable {
 
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
+        // changed local variable to true
+        int [][]vis=new int[4][4];
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                vis[i][j] = 0;
+            }
+        }
+        board.setViewingPerspective(side);
+        for (int row = board.size() - 2; row >= 0; row--) {
+            for (int col = 0; col < board.size(); col++) {
+                Tile up=board.tile(col,row+1);
+                Tile cur=board.tile (col,row);
+                if(cur==null)continue;
+                int currow=row+1;
+                while(currow< board.size()-1&&up==null){
+                    currow++;
+                    up=board.tile(col,currow);
+                }
+                if(up==null){
+                    board.move(col,3,cur);
+                    changed=true;
+                }else{
+                    if(vis[currow][col]==1){
+                        if(currow-row>1){
+                            changed=true;
+                            board.move(col,currow-1,cur);
+                        }
+                    }else{
+                        if(up.value()==cur.value()){
+                            changed=true;
+                            vis[currow][col]=1;
+                            score+=2*cur.value();
+                            board.move(col,currow,cur);
+                        }else{
+                            if(currow-row>1){
+                                changed=true;
+                                board.move(col,currow-1,cur);
+                            }
+                        }
+                    }
+                }
 
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
+
         if (changed) {
             setChanged();
         }
@@ -138,6 +184,17 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        length=b.size();
+        int cnt=0;
+        System.out.println(b.tile(0,0));
+        for(int i=0;i<length;i++){
+            for(int j=0;j<length;j++){
+                if(b.tile(j,i)==null){
+                    cnt++;
+                }
+            }
+        }
+        if(cnt!=0)return true;
         return false;
     }
 
@@ -148,6 +205,15 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int lenth=b.size();
+        for(int i=0;i<lenth;i++){
+            for(int j=0;j<lenth;j++){
+                Tile t=b.tile(j,i);
+                if(t != null && t.value() == MAX_PIECE){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +225,23 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        int move[]={-1,0,1,0,-1};
+        int length=b.size();
+        for(int i=0;i<length;i++){
+            for(int j=0;j<length;j++){
+                Tile t=b.tile(j,i);
+                if(t==null)return true;
+                for(int k=0;k<4;k++){
+                    int nx=i+move[k];
+                    int ny=j+move[k+1];
+                    if(nx>=0&&nx<length&&ny>=0&&ny<length){
+                        Tile t1=b.tile(nx,ny);
+                        if(t1==null)return true;
+                        if(t1.value()==t.value())return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
