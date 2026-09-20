@@ -1,44 +1,64 @@
 # This makefile is defined to give you the following targets:
 #
-#    default: The default target: Compiles the program in package db61b.
-#    check: Compiles the gitlet package, if needed, and then performs the
-#           tests described in testing/Makefile.
-#    clean: Remove regeneratable files (such as .class files) produced by
-#           other targets and Emacs backup files.
+#    default: The default target: Compiles $(PROG) and whatever it 
+#	   depends on.
+#    check: Compile $(PROG), if needed, and then for each file, F.in, in
+#	   directory testing, use F.in as input to "java $(MAIN_CLASS)" and
+#          compare the output to the contents of the file names F.out.
+#          Report discrepencies.
+#    clean: Remove all the .class files produced by java compilation, 
+#          all Emacs backup files, and testing output files.
 #
 # In other words, type 'make' to compile everything; 'make check' to 
 # compile and test everything, and 'make clean' to clean things up.
 # 
 # You can use this file without understanding most of it, of course, but
 # I strongly recommend that you try to figure it out, and where you cannot,
-# that you ask questions.  The Lab Reader contains documentation.
+# that you ask questions.
 
-# Name of package containing main procedure 
-PACKAGE = gitlet
+JFLAGS = -g -Xlint:unchecked -Xlint:deprecation
 
-# The name of the Python 3 program, used in the 'check' target.  If your system
-# has a different name for this program (such as just "python"), run
-# the Makefile with
-#	make PYTHON=python check
+CLASSDIR = ../classes
+
+# See comment in ../Makefile
 PYTHON = python3
-
-# Flags to pass to tester.py.
-TESTER_FLAGS =
 
 RMAKE = "$(MAKE)"
 
-# Targets that don't correspond to files, but are to be treated as commands.
+# A CLASSPATH value that (seems) to work on both Windows and Unix systems.
+# To Unix, it looks like ..:$(CLASSPATH):JUNK and to Windows like
+# JUNK;..;$(CLASSPATH).
+
+LIB = ../../library-sp21/javalib/*
+
+
+CPATH = "$(LIB):..:$(CLASSPATH):;$(LIB);..;$(CLASSPATH)"
+
+# All .java files in this directory.
+SRCS := $(wildcard *.java)
+
 .PHONY: default check clean
 
-default:
-	$(RMAKE) -C $(PACKAGE) default
+# As a convenience, you can compile a single Java file X.java in this directory
+# with 'make X.class'
+%.class: %.java
+	javac $(JFLAGS) -cp $(CPATH) $<
 
-check: default
-	$(RMAKE) -C testing PYTHON=$(PYTHON) TESTER_FLAGS="$(TESTER_FLAGS)" check
+# First, and therefore default, target.
+default: sentinel
+
+check:
+	$(RMAKE) -C .. PYTHON=$(PYTHON) check
+
+integration:
+	$(RMAKE) -C .. PYTHON=$(PYTHON) integration
 
 # 'make clean' will clean up stuff you can reconstruct.
 clean:
-	$(RM) *~
-	$(RMAKE) -C $(PACKAGE) clean
-	$(RMAKE) -C testing clean
+	$(RM) *~ *.class sentinel
 
+### DEPENDENCIES ###
+
+sentinel: $(SRCS)
+	javac $(JFLAGS) -cp $(CPATH) $(SRCS)
+	touch sentinel
