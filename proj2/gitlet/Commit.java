@@ -1,26 +1,60 @@
 package gitlet;
 
-// TODO: any imports you need here
+import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
-import java.util.Date; // TODO: You'll likely use this in this class
-
-/** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
- */
-public class Commit {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
+public class Commit implements Serializable {
 
     /** The message of this Commit. */
     private String message;
+    //日期
+    private Date date;
+    private List<String>parent;
+    //文件名
+    private Map<String, String> tracked;
 
-    /* TODO: fill in the rest of this class. */
+    public Commit(String message,Date date,List<String>parents,Map<String, String> tracked){
+        this.message=message;
+        this.date=date;
+        if (parents == null) {
+            this.parent = new ArrayList<>();
+        } else {
+            this.parent = new ArrayList<>(parents);
+        }
+        if (tracked == null) {
+            this.tracked = new TreeMap<>();
+        } else {
+            this.tracked = new TreeMap<>(tracked);
+        }
+    }
+
+    public String getMessage(){
+        return this.message;
+    }
+
+    public String getDate(){
+        return dateToDate(this.date);
+    }
+
+    public List<String> getParent(){
+        return this.parent;
+    }
+
+    public Map<String,String> getTracked(){
+        return this.tracked;
+    }
+
+    //规范化日期
+    public String dateToDate(Date date){
+        DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy -0000", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat.format(date);
+    }
+
+    //得到commit哈希值
+    public String getUid(){
+        return Utils.sha1(dateToDate(this.date), this.message,this.parent.toString(),this.tracked.toString());
+    }
 }
